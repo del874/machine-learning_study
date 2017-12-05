@@ -43,7 +43,7 @@ class CombinedAttributesAdder(BaseEstimator, TransformerMixin):
         rooms_per_household = X[:, rooms_ix] / X[:, household_ix]
         population_per_household = X[:, population_ix] / X[:, household_ix]
         if self.add_bedrooms_per_room:
-            bedrooms_per_room = X[:, bedrooms_ix] / X[: rooms_ix]
+            bedrooms_per_room = X[:, bedrooms_ix] / X[:, rooms_ix]
             return np.c_[X, rooms_per_household, population_per_household, bedrooms_per_room]
         else:
             return np.c_[X, rooms_per_household, population_per_household]
@@ -54,6 +54,13 @@ from sklearn.preprocessing import StandardScaler, Imputer, LabelBinarizer
 
 fetch_housing_data()
 housing = load_housing_data()
+
+housing['rooms_per_household'] = housing['total_rooms'] / housing['households']
+housing['bedrooms_per_room'] = housing['total_bedrooms'] / housing['total_rooms']
+housing['population_per_household'] = housing['population'] / housing['households']
+
+housing = strat_train_set.drop('median_house_value', axis=1)
+housing_babels = strat_train_set['median_house_value'].copy
 
 housing_num = housing.drop('ocean_proximity', axis=1)
 num_attribs = list(housing_num)
@@ -73,5 +80,9 @@ cat_pipeline = Pipeline([
 
 full_pipeline = FeatureUnion(transformer_list=[
     ('num_pipeline', num_pipeline),
-    ('cat_pipeline', cat_pipeline)
+    ('cat_pipeline', cat_pipeline),
 ])
+
+if __name__ == '__main__':
+    housing_prepared = full_pipeline.fit_transform(housing)
+    
